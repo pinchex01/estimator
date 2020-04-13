@@ -1,19 +1,30 @@
 const covid19ImpactEstimator = (data) => data => {
+
+    currentlyInfected = (reportedCases) => {
+        return reportedCases * 10;
+    }
+
+    severeImpacted = (reportedCases) => {
+        return reportedCases * 50;
+    }
     
-    const estimator = chain (
-        //challenge one
-        estimateCurrentlyInfected,
-        estimateProjectedInfections,
+    infectionsByRequestedTime = () => {
+        currentlyInfected * 1024;
+    }
+    // const estimator = chain (
+    //     //challenge one
+    //     estimateCurrentlyInfected,
+    //     estimateProjectedInfections,
 
-        //challenge two
-        estimatedSevereCases,
-        estimateBedSpaceAvailability,
+    //     //challenge two
+    //     estimatedSevereCases,
+    //     estimateBedSpaceAvailability,
 
-        //challenge three
-        estimateCasesForICU,
-        estimateCasesForVentilators,
-        estimateDollarsInFlight
-    );
+    //     //challenge three
+    //     estimateCasesForICU,
+    //     estimateCasesForVentilators,
+    //     estimateDollarsInFlight
+    // );
 
     return estimator ({
         data,
