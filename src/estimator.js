@@ -1,73 +1,98 @@
-import * as utils from './utils';
-
-const covid19ImpactEstimator = (data) => data => {
-
-    // const duration = (period, days) => {
-    //     switch (period) {
-    //       case 'weeks':
-    //         return days * 7;
-    //       case 'months':
-    //         return days * 30;
-    //       default:
-    //         return days;
-    //     }
-    //   };
-    const {  
-        reportedCases: cases, 
-        totalHospitalBeds, region
+const covid19ImpactEstimator = (data) => {
+    // Destructuring the given data
+    const {
+      region: { avgDailyIncomeInUSD, avgDailyIncomePopulation },
+      periodType,
+      reportedCases,
+      totalHospitalBeds
     } = data;
-
- const  { 
-        avgDailyIncomeInUSD: avgUSD,
-        avgDailyIncomePopulation: avgDailyIncomePpltn
-        } = region;
- const { 
-        bestCase: iCurrentlyInfected,
-         worstCase: sCurrentlyInfected
-       } = utils.CalcInfected(cases);
-
- const iInfections = iCurrentlyInfected * (2 ** utils.CalculateFactor(data));
-
- const sInfections = sCurrentlyInfected * (2 ** utils.CalculateFactor(data));
-
- const iSevereCasesByRequestedTime = Math.trunc(0.15 * (iInfections));
-
- const sSevereCasesByRequestedTime = Math.trunc(0.15 * (sInfections));
-
- const iAvailableBeds = Math.trunc((0.35 * totalHospitalBeds) - iSevereCasesByRequestedTime);
-
- const sAvailableBeds = Math.trunc((0.35 * totalHospitalBeds) - sSevereCasesByRequestedTime);
- const iCasesForICUByRequestedTime = Math.trunc(0.05 * iInfections);
- const sCasesForICUByRequestedTime = Math.trunc(0.05 * sInfections);
- const iCasesForVentilatorsByRequestedTime = Math.trunc(0.02 * iInfections);
- const sCasesForVentilatorsByRequestedTime = Math.trunc(0.02 * sInfections);
- const iDollars = (iInfections * avgDailyIncomePpltn * avgUSD) / utils.formatDuration(data);
- const sDollars = (sInfections * avgDailyIncomePpltn * avgUSD) / utils.formatDuration(data);
-
- return {
-        data,
-        impact: {
-            currentlyInfected: iCurrentlyInfected,
-            infectionsByRequestedTime: iInfections,
-            severeCasesByRequestedTime: iSevereCasesByRequestedTime,
-            hospitalBedsByRequestedTime: iAvailableBeds,
-            casesForICUByRequestedTime: iCasesForICUByRequestedTime,
-            casesForVentilatorsByRequestedTime: iCasesForVentilatorsByRequestedTime,
-            dollarsInFlight: Math.trunc(iDollars)
-        },
-        severeImpact: {
-            currentlyInfected: sCurrentlyInfected,
-            infectionsByRequestedTime: sInfections,
-            severeCasesByRequestedTime: sSevereCasesByRequestedTime,
-            hospitalBedsByRequestedTime: sAvailableBeds,
-            casesForICUByRequestedTime: sCasesForICUByRequestedTime,
-            casesForVentilatorsByRequestedTime: sCasesForVentilatorsByRequestedTime,
-            dollarsInFlight: Math.trunc(sDollars)
-        }
-
-        };
-};
-
-
-
-export default covid19ImpactEstimator;
+    let { timeToElapse } = data;
+  
+    // Custom Functions and Variables
+  
+    // normalize days; check for weeks and months if used
+    if (periodType === 'months') timeToElapse = Math.trunc(timeToElapse * 30);
+    if (periodType === 'weeks') timeToElapse = Math.trunc(timeToElapse * 7);
+    // if (periodType === 'days') timeToElapse = Math.trunc(timeToElapse * 1);
+  
+    // calculate InfectionsByRequestedTime
+    const calculateInfectionsByRequestedTime = (currentlyInfected) => {
+      const factor = Math.trunc(timeToElapse / 3);
+      return currentlyInfected * 2 ** factor;
+    };
+    // calculate AvailableBeds
+    const calculateAvailableBeds = (severeCasesByRequestedTime) => {
+      const bedsAvailable = totalHospitalBeds * 0.35;
+      const shortage = bedsAvailable - severeCasesByRequestedTime;
+      const result = shortage < 0 ? shortage : bedsAvailable;
+      return Math.trunc(result);
+    };
+  
+    // calculate dollarsInFlight
+    const calculateDollarsInFlight = (infectionsByRequestedTime) => {
+      const infections = infectionsByRequestedTime
+        * avgDailyIncomeInUSD
+        * avgDailyIncomePopulation;
+      const result = infections / timeToElapse;
+      return Math.trunc(result);
+    };
+  
+    // the best case estimation computation
+    const impact = {};
+    // challenge 1
+    impact.currentlyInfected = reportedCases * 10;
+    impact.infectionsByRequestedTime = calculateInfectionsByRequestedTime(
+      impact.currentlyInfected
+    );
+    // challenge 2
+    impact.severeCasesByRequestedTime = Math.trunc(
+      impact.infectionsByRequestedTime * 0.15
+    );
+    impact.hospitalBedsByRequestedTime = calculateAvailableBeds(
+      impact.severeCasesByRequestedTime
+    );
+    // challenge 3
+    impact.casesForICUByRequestedTime = Math.trunc(
+      impact.infectionsByRequestedTime * 0.05
+    );
+    impact.casesForVentilatorsByRequestedTime = Math.trunc(
+      impact.infectionsByRequestedTime * 0.02
+    );
+    impact.dollarsInFlight = calculateDollarsInFlight(
+      impact.infectionsByRequestedTime
+    );
+  
+    // the severe case estimation computation
+    const severeImpact = {};
+    // challenge 1
+    severeImpact.currentlyInfected = reportedCases * 50;
+    severeImpact.infectionsByRequestedTime = calculateInfectionsByRequestedTime(
+      severeImpact.currentlyInfected
+    );
+    // challenge 2
+    severeImpact.severeCasesByRequestedTime = Math.trunc(
+      severeImpact.infectionsByRequestedTime * 0.15
+    );
+    severeImpact.hospitalBedsByRequestedTime = calculateAvailableBeds(
+      severeImpact.severeCasesByRequestedTime
+    );
+    // challenge 3
+    severeImpact.casesForICUByRequestedTime = Math.trunc(
+      severeImpact.infectionsByRequestedTime * 0.05
+    );
+    severeImpact.casesForVentilatorsByRequestedTime = Math.trunc(
+      severeImpact.infectionsByRequestedTime * 0.02
+    );
+    severeImpact.dollarsInFlight = calculateDollarsInFlight(
+      severeImpact.infectionsByRequestedTime
+    );
+  
+    return {
+      data, // the input data you got
+      impact, // your best case estimation
+      severeImpact // your severe case estimation
+    };
+  };
+  
+  export default covid19ImpactEstimator;
+  
