@@ -38,4 +38,7 @@ const covid19ImpactEstimator = (data) => {
       dollarsInFlight: Math.trunc(sDollars)
     }
   };
+  
 };
+
+export default covid19ImpactEstimator;
