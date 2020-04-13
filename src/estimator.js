@@ -1,4 +1,4 @@
-const covid19ImpactEstimator = (data) => data => {
+const covid19ImpactEstimator = (data)  => {
 
     currentlyInfected = (reportedCases) => {
         return reportedCases * 10;
