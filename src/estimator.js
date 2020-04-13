@@ -1,14 +1,14 @@
-const covid19ImpactEstimator = (data)=> {
+const covid19ImpactEstimator = (data) => {
 
-    currentlyInfected = (reportedCases)=> {
+    currentlyInfected = (reportedCases) => {
         return reportedCases * 10;
     }
 
-    severeImpacted = (reportedCases)=> {
+    severeImpacted = (reportedCases) => {
         return reportedCases * 50;
     }
     
-    infectionsByRequestedTime = ()=> {
+    infectionsByRequestedTime = () => {
         currentlyInfected * 1024;
     }
     // const estimator = chain (
